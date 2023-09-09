@@ -11,7 +11,6 @@
             <template v-if="dragOver" class="text-gray-500 text-center py-8 text-sm">
                 Drop files here to upload
             </template>
-
             <template v-else>
                 <div class="flex items-center justify-between w-full">
                     <SearchForm/>
@@ -23,6 +22,7 @@
             </template>
         </main>
     </div>
+
 </template>
 
 
@@ -39,9 +39,9 @@ import {useForm, usePage} from "@inertiajs/vue3";
 
 // Uses
 const page = usePage();
-
 const fileUploadForm = useForm({
     files: [],
+    relative_paths: [],
     parent_id: null
 })
 
@@ -66,7 +66,6 @@ function onDragLeave() {
 function handleDrop(ev) {
     dragOver.value = false;
     const files = ev.dataTransfer.files
-    console.log(files)
     if (!files.length) {
         return
     }
@@ -78,6 +77,8 @@ function uploadFiles(files) {
     console.log(files);
     fileUploadForm.parent_id = page.props.folder.id
     fileUploadForm.files = files
+    fileUploadForm.relative_paths = [...files].map(f => f.webkitRelativePath);
+
     fileUploadForm.post(route('file.store'));
 }
 
@@ -92,8 +93,8 @@ onMounted(() => {
 
 <style scoped>
 .dropzone {
-    width: auto;
-    height: auto;
+    width: 100%;
+    height: 100%;
     color: #8d8d8d;
     border: 2px dashed gray;
     display: flex;

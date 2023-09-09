@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Kalnoy\Nestedset\NodeTrait;
 
-
 class File extends Model
 {
     use HasFactory, HasCreatorAndUpdater, NodeTrait, SoftDeletes;
@@ -29,6 +28,21 @@ class File extends Model
         return $this->belongsTo(File::class, 'parent_id');
     }
 
+    public function starred()
+    {
+        return $this->hasOne(StarredFile::class, 'file_id', 'id')
+            ->where('user_id', Auth::id());
+    }
+
+    public function owner(): Attribute
+    {
+        return Attribute::make(
+            get: function (mixed $value, array $attributes) {
+                return $attributes['created_by'] == Auth::id() ? 'me' : $this->user->name;
+            }
+        );
+    }
+
     public function isOwnedBy($userId): bool
     {
         return $this->created_by == $userId;
@@ -39,23 +53,14 @@ class File extends Model
         return $this->parent_id === null;
     }
 
-    public function starred()
-    {
-        return $this->hasOne(StarredFile::class, 'file_id', 'id')
-            ->where('user_id', Auth::id());
-    }
-
-    public function owner(): Attribute
-    {
-        return Attribute::make(function($value, $attributes) {
-            return $attributes['created_by'] == Auth::id() ? 'me' : $this->user->name;
-        });
-    }
-
-
-
-
-
+//    public function get_file_size()
+//    {
+//        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+//
+//        $power = $this->size > 0 ? floor(log($this->size, 1024)) : 0;
+//
+//        return number_format($this->size / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
+//    }
 
     protected static function boot()
     {
@@ -65,7 +70,7 @@ class File extends Model
             if (!$model->parent) {
                 return;
             }
-            $model->path = ( !$model->parent->isRoot() ? $model->parent->path . '/' : '' ) . Str::slug($model->name);
+            $model->path = (!$model->parent->isRoot() ? $model->parent->path . '/' : '') . Str::slug($model->name);
         });
 
 //        static::deleted(function(File $model) {
@@ -74,5 +79,4 @@ class File extends Model
 //            }
 //        });
     }
-
 }

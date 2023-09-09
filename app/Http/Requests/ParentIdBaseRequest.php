@@ -42,6 +42,5 @@ class ParentIdBaseRequest extends FormRequest
                     })
             ]
         ];
-
     }
 }

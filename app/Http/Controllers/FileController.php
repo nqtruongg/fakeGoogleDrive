@@ -49,20 +49,21 @@ class FileController extends Controller
         return Inertia::render('MyFiles', compact('files', 'folder', 'ancestors'));
     }
 
-    protected function getRoot()
+    private function getRoot()
     {
         return File::query()->whereIsRoot()->where('created_by', Auth::id())->firstOrFail();
     }
 
+
     public function createFolder(StoreFolderRequest $request)
     {
-
         $data = $request->validated();
         $parent = $request->parent;
 
         if (!$parent) {
             $parent = $this->getRoot();
         }
+
         $file = new File();
         $file->is_folder = 1;
         $file->name = $data['name'];
@@ -77,7 +78,7 @@ class FileController extends Controller
         $user = $request->user();
         $fileTree = $request->file_tree;
 
-        if ($parent) {
+        if (!$parent) {
             $parent = $this->getRoot();
         }
 
@@ -87,41 +88,46 @@ class FileController extends Controller
             foreach ($data['files'] as $file) {
                 /** @var \Illuminate\Http\UploadedFile $file */
 
-                $path = $file->store('/files/' . $user->id);
-
-                $model = new File();
-                $model->storage_path = $path;
-                $model->is_folder = false;
-                $model->name = $file->getClientOriginalName();
-                $model->mime = $file->getMimeType();
-                $model->size = $file->getSize();
-                $parent->appendNode($model);
+                $this->saveFile($file, $user, $parent);
             }
         }
     }
 
+
     public function saveFileTree($fileTree, $parent, $user)
     {
-        foreach ($fileTree as $name => $file){
-            if (is_array($file)){
+        foreach ($fileTree as $name => $file) {
+            if (is_array($file)) {
                 $folder = new File();
                 $folder->is_folder = 1;
                 $folder->name = $name;
 
-                $parent->appendChild($folder);
+                $parent->appendNode($folder);
                 $this->saveFileTree($file, $folder, $user);
-            }else {
-                $path = $file->store('/files/' . $user->id);
+            } else {
 
-                $model = new File();
-                $model->storage_path = $path;
-                $model->is_folder = false;
-                $model->name = $file->getClientOriginalName();
-                $model->mime = $file->getMimeType();
-                $model->size = $file->getSize();
-                $parent->appendNode($model);
+                $this->saveFile($file, $user, $parent);
             }
         }
+    }
+
+    /**
+     * @param $file
+     * @param $user
+     * @param $parent
+     * @return void
+     */
+    public function saveFile($file, $user, $parent): void
+    {
+        $path = $file->store('/files/' . $user->id);
+
+        $model = new File();
+        $model->storage_path = $path;
+        $model->is_folder = false;
+        $model->name = $file->getClientOriginalName();
+        $model->mime = $file->getMimeType();
+        $model->size = $file->getSize();
+        $parent->appendNode($model);
     }
 
 
