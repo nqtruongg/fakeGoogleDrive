@@ -46,6 +46,7 @@
 
                     class="bg-white border-b transition duration-300 ease-in-out hover:bg-gray-100 cursor-pointer">
                     <td class="px-6 py-4 whitescape-nowrap text-sm font-medium text-gray-900">
+                      <FileIcon :file="file" />
                         {{file.name}}
                     </td>
                     <td class="px-6 py-4 whitescape-nowrap text-sm font-medium text-gray-900">
@@ -73,6 +74,7 @@ import {HomeIcon} from '@heroicons/vue/20/solid'
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import {router} from "@inertiajs/vue3";
 import {Link} from "@inertiajs/vue3";
+import FileIcon from "@/Components/app/FileIcon.vue";
 // Uses
 
 //Refs

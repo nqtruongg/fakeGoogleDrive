@@ -62,6 +62,16 @@ class File extends Model
 //        return number_format($this->size / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
 //    }
 
+    public function get_file_size()
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        //5000 - log(5000, 1024) = 1.228 -> 1
+
+        $power = $this->size > 0 ? floor(log($this->size, 1024)) : 0;
+
+        return number_format($this->size / pow(1024, $power), 2, '.', ','). ' ' . $units[$power];
+    }
+
     protected static function boot()
     {
         parent::boot();
