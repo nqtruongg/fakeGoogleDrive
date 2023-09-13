@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout>
         <nav class="flex items-center justify-between p-1 mb-3">
-            <ul class="inline-flex items-center space-x-1 md:space-x-3">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li v-for="ans of ancestors.data" :key="ans.id" class="inline-flex items-center">
                     <Link v-if="!ans.parent_id" :href="route('myFiles')"
                           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
@@ -22,12 +22,20 @@
                         </Link>
                     </div>
                 </li>
-            </ul>
+            </ol>
+
+            <div>
+                    <DeleteFilesButton :delete-all="allSelected" :delete-ids="selectedIds" @delete="onDelete" />
+            </div>
         </nav>
         <div class="flex-1 overflow-y-auto">
             <table class="min-w-full">
                 <thead class="bg-gray-100 border-b">
                 <tr>
+                    <th class="text-sm font-medium text-gray-900 px-6 py-4 text-left w-[30px] max-w-[30px] pr-0">
+                        <Checkbox @change="onSelectAllChange" v-model:checked="allSelected" />
+                    </th>
+
                     <th class="text-sm font-medium text-gray-900 px-6 py-4">
                         Name
                     </th>
@@ -44,9 +52,14 @@
                 </thead>
                 <tbody>
                 <tr v-for="file of allFiles.data" :key="file.id"
+                    @click="$event => toggleFileSelect(file)"
                     @dblclick="openFolder(file)"
+                    class="border-b transition duration-300 ease-in-out hover:bg-blue-100 cursor-pointer"
+                    :class="(selected[file.id] || allSelected) ? 'bg-blue-50' : 'bg-white'">
+                   <td  class="px-6 py-4 whitescape-nowrap text-sm font-medium text-gray-900 w-[30px] max-w-[30px] pr-0">
+                       <Checkbox @change="$event => onSelectCheckboxChange(file)" v-model="selected[file.id]" :checked="selected[file.id] || allSelected" />
+                   </td>
 
-                    class="bg-white border-b transition duration-300 ease-in-out hover:bg-gray-100 cursor-pointer">
                     <td class="px-6 py-4 whitescape-nowrap text-sm font-medium text-gray-900">
                         <FileIcon :file="file"/>
                         {{ file.name }}
@@ -80,11 +93,15 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import {router} from "@inertiajs/vue3";
 import {Link} from "@inertiajs/vue3";
 import FileIcon from "@/Components/app/FileIcon.vue";
-import {onMounted, onUpdated, ref} from "vue";
+import {computed, onMounted, onUpdated, ref} from "vue";
 import {httpGet} from "@/Helper/http-helper.js";
+import Checkbox from "@/Components/Checkbox.vue";
+import DeleteFilesButton from "@/Components/app/DeleteFilesButton.vue";
 // Uses
 
 //Refs
+const allSelected = ref(false)
+const selected = ref({});
 const loadMoreIntersect = ref(null)
 const allFiles = ref({
     data: props.files.data,
@@ -99,6 +116,7 @@ const props = defineProps({
 })
 
 // Computed
+const selectedIds = computed(()=> Object.entries(selected.value).filter(a => a[1]).map(a => a[0]))
 
 // Methods
 function openFolder(file) {
@@ -121,6 +139,41 @@ function loadMore() {
             allFiles.value.data = [...allFiles.value.data, ...res.data]
             allFiles.value.next = res.links.next
         })
+}
+
+function onSelectAllChange() {
+    allFiles.value.data.forEach(f => {
+        selected.value[f.id] = allSelected.value
+    })
+}
+
+function toggleFileSelect(file) {
+    selected.value[file.id] = !selected.value[file.id]
+    onSelectCheckboxChange(file)
+}
+
+function onSelectCheckboxChange(file) {
+    if (!selected.value[file.id]) {
+        allSelected.value = false;
+    } else {
+        let checked = true;
+
+        for (let file of allFiles.value.data) {
+            if (!selected.value[file.id]) {
+                checked = false;
+                break;
+            }
+        }
+
+        allSelected.value = checked
+
+    }
+}
+
+
+function onDelete(){
+    allSelected.value = false
+    selected.value = {}
 }
 
 
